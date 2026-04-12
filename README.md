@@ -171,7 +171,7 @@ Every command follows the same pattern:
 |-----------|-------|---------|
 | Agents | 7 | architect, product-manager, copy-reviewer, figma-designer, inspiration-researcher, design-doc-author, design-planner |
 | Pipeline Skills | 8 | `/00-setup` through `/07-figma` |
-| Utility Skills | 2 | `/correct` (design corrections), `/docx` (Word documents) |
+| Utility Skills | 1 | `/correct` (design corrections) |
 | Knowledge Files | 3 | Figma MCP reference, Mermaid syntax, Problem-solving framework |
 | Templates | 7 | PRD, user story, epic, design system, inspiration research, design document, design plan |
 | MCP Servers | 2 | Figma (screen construction), Google Drive (doc access) |
