@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "gdrive": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-gdrive"
+      ],
+      "env": {
+        "GDRIVE_CLIENT_ID": "{{OAUTH_CLIENT_ID}}",
+        "GDRIVE_CLIENT_SECRET": "{{OAUTH_CLIENT_SECRET}}",
+        "GDRIVE_OAUTH_PATH": "{{PROJECT_ROOT}}/.gdrive/gcp-oauth.keys.json",
+        "GDRIVE_CREDENTIALS_PATH": "{{PROJECT_ROOT}}/.gdrive/.gdrive-server-credentials.json"
+      }
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    }
+  }
+}

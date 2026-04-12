@@ -1,0 +1,23 @@
+# Credentials & secrets
+.gdrive/
+.env
+.env.*
+*.keys.json
+*credentials*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+build/
+dist/
