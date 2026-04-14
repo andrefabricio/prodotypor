@@ -6,7 +6,7 @@
 
 <p align="center">
   An AI-assisted product development pipeline for Claude Code.<br>
-  Go from a product idea to Figma screens in 8 structured steps,<br>
+  Go from a product idea to a clickable Figma prototype in 9 structured steps,<br>
   with specialized AI agents handling product management, design research, and visual construction.
 </p>
 
@@ -36,6 +36,7 @@ Copy the template into your project, run `/00-setup` to answer a few questions a
   | ───── /05-design-doc ─────────────────> |  Specifies colors, typography, components
   | ───── /06-design-plan ────────────────> |  Plans every screen with construction specs
   | ───── /07-figma ──────────────────────> |  Builds screens in Figma via MCP
+  | ───── /prototype ─────────────────────> |  Wires clickable prototype + flow diagram
   |                                         |
   |  <── You review & approve at every step |
 ```
@@ -90,6 +91,7 @@ Every step produces real deliverables — markdown docs, design specs, Figma fra
 | 05 | `/05-design-doc` | Synthesizes research into a design specification | `docs/Design/*-design-document.md` |
 | 06 | `/06-design-plan` | Creates Figma construction plan with screen-by-screen specs | `docs/Design/figma-design-plan.md` |
 | 07 | `/07-figma` | Constructs screens in Figma using the plan specs via MCP | Figma canvas |
+| -- | `/prototype` | Generates prototype wiring guide + Mermaid flow diagram, wires interactions | `docs/Design/prototype-wiring-guide.md` |
 
 Steps 03 and 04 can run in parallel. All other steps are sequential — each checks its prerequisites before proceeding.
 
@@ -171,6 +173,7 @@ Every command follows the same pattern:
 |-----------|-------|---------|
 | Agents | 7 | architect, product-manager, copy-reviewer, figma-designer, inspiration-researcher, design-doc-author, design-planner |
 | Pipeline Skills | 8 | `/00-setup` through `/07-figma` |
+| Post-Pipeline Skills | 1 | `/prototype` (prototype wiring + flow diagrams) |
 | Utility Skills | 1 | `/correct` (design corrections) |
 | Knowledge Files | 3 | Figma MCP reference, Mermaid syntax, Problem-solving framework |
 | Templates | 7 | PRD, user story, epic, design system, inspiration research, design document, design plan |
@@ -229,7 +232,7 @@ Run `/00-setup` again — it resumes from the last completed phase, won't overwr
 
 **Not a production-ready app generator.** The pipeline produces product documentation and UI designs. It doesn't write application code, set up databases, or deploy anything. The architect agent can help with technical planning, but code generation is outside this pipeline's scope.
 
-**Not framework-agnostic yet.** The current design pipeline (steps 05-07) is built around mobile app patterns — 390x844 frames, component-based UI, Figma as the design tool. Web-first teams (React, Tailwind, design-in-code) would need to adapt the design agents and templates.
+**Not framework-agnostic yet.** The current design pipeline (steps 05-07) is built around mobile app patterns — device dimensions from `.devices.md`, component-based UI, Figma as the design tool. Web-first teams (React, Tailwind, design-in-code) would need to adapt the design agents and templates.
 
 **Not tested at scale.** Steps 01-03 and 07 are derived from a real production project. Steps 04-06 (inspiration research, design document, design plan) were created for this template and have limited real-world validation. Expect to iterate on agent output quality.
 
@@ -273,6 +276,35 @@ Improvements under consideration for future versions:
 - [ ] Interactive pipeline dashboard (web UI for status visualization)
 - [ ] Step-level undo (revert a step's output and re-run)
 - [ ] Partial pipeline runs (install only PM steps 01-03 or only design steps 05-07)
+
+## Changelog
+
+### v1.1.0 (2026-04-15)
+
+Propagated improvements from production use (Candle-Product, April 10-14):
+
+**New components:**
+- `/prototype` skill — generates prototype wiring guides with interaction mapping, Mermaid flow diagrams, and dead-end detection
+- `.devices.md` — device configuration template (single source of truth for screen dimensions, replaces hardcoded 390x844)
+
+**Safety rules (figma-designer agent, +130 lines):**
+- Rule 9: Orphan Prevention — `createdNodes[]` tracking + auto-cleanup in catch block
+- Rule 10: Post-Construction Page Audit — auto-detects and removes orphaned nodes
+- Rule 11: Component Health Gate — `safeInstance()` prevents instancing empty-shell components
+- Rule 12: Overlay Screen Construction — `CLONE` keyword ensures overlay backgrounds are populated
+- Scope-Check Gate — requires demo path declaration before any construction
+
+**Knowledge patterns (figma-mcp-reference, +120 lines):**
+- Patterns I-L: copy-pasteable JavaScript for orphan prevention, page audit, component health, overlay cloning
+- Fixed multi-page anti-pattern: replaced "One Page per Batch" (which breaks prototype interactions) with single-page architecture guidance
+
+**Architecture:**
+- Principle #6: Device targets are configuration, not constants (`.devices.md`)
+- All hardcoded 390x844 references replaced with `.devices.md` lookups
+
+### v1.0.0 (2026-04-12)
+
+Initial release. 8-step pipeline, 7 agents, 9 skills, 3 knowledge files, 7 templates.
 
 ---
 

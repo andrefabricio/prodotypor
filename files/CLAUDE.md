@@ -130,6 +130,7 @@ Acceptance Criteria:
 3. **Fail loudly in dev, fail gracefully in prod** — differentiated error handling by environment.
 4. **State is the enemy** — minimise shared mutable state; prefer reactive patterns.
 5. **Vertical slices over horizontal layers** — organise code by feature, not by type.
+6. **Device targets are configuration, not constants** — screen dimensions are defined in `.devices.md` at project root. All agents, design plans, and workflows must read this file before any Figma construction. Never hardcode device dimensions in agent instructions or design docs.
 
 ---
 

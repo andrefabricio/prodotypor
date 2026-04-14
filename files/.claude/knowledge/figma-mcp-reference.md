@@ -95,7 +95,7 @@ No API key or environment variables needed. Authentication happens via browser O
 ```
 File
   └── Page (organize by flow: "Onboarding", "Core Loop", etc.)
-       └── Frame (a single screen, 390x844 for mobile)
+       └── Frame (a single screen, dimensions from `.devices.md`)
             └── Auto Layout Container
                  ├── Text Node
                  ├── Rectangle / Shape
@@ -168,14 +168,13 @@ Extract these into components early:
 - `Avatar` (sizes: 26px, 32px, 36px, 42px)
 - `ReactionButton` <!-- CUSTOMIZE: your project's reaction types -->
 
-### One Page per Batch
+### Single-Page Architecture
 
-Organize the Figma file by batches:
-- Page "Onboarding" — screens 2-5
-- Page "Core Loop" — screens 6-9
-- Page "Completion" — screens 10-18
-- Page "Management" — screens 19-33
-- Page "Components" — shared component definitions
+All screens on **one page** unless the user explicitly specifies otherwise. Components on a separate page.
+
+**Why:** Figma prototype interactions cannot cross pages. Multi-page splits break interaction chains and require clone frames as workarounds — leading to duplicated screens and broken navigation flows.
+
+<!-- CUSTOMIZE: Adjust page organization to your project's scale. For very large projects (50+ screens), consider splitting by major flow — but be aware of the prototype linking limitation. -->
 
 ---
 
@@ -186,7 +185,7 @@ Organize the Figma file by batches:
 ### Standard Frame
 
 ```
-Frame: 390x844, vertical auto layout
+Frame: dimensions from `.devices.md`, vertical auto layout
   Fill: var(pageBg)    <!-- CUSTOMIZE: your page background token -->
   Padding: 0 (managed per section)
   Gap: 0 (managed explicitly)
@@ -452,6 +451,97 @@ Use spacers for gaps between major sections when `itemSpacing` on the parent doe
 | `clipsContent = true` (default) | Overflow hidden | Set `false` only for overlay screens |
 | Using `layoutSizingHorizontal = "HUG"` on child | Child shrinks, doesn't fill | Use FILL to expand to parent width |
 | Building components inline | No single source of truth | Use `getNodeById().createInstance()` |
+
+### I. Tracked Node Creation (Orphan Prevention)
+
+Every `use_figma` script must track created nodes for cleanup on failure:
+
+```javascript
+const createdNodes = [];
+function createFrame(name) {
+  const f = figma.createFrame(); f.name = name; createdNodes.push(f); return f;
+}
+function createText(name) {
+  const t = figma.createText(); t.name = name; createdNodes.push(t); return t;
+}
+// Also track component instances:
+// const inst = comp.createInstance(); createdNodes.push(inst);
+
+// In catch block:
+// for (const node of createdNodes) {
+//   try { if (node && !node.removed) { node.remove(); } } catch {}
+// }
+```
+
+### J. Post-Construction Page Audit
+
+Append to every construction script before `return` to detect orphaned nodes:
+
+```javascript
+const page = figma.getNodeById("PAGE_ID");
+const expectedScreens = ["Screen 1 — Name", /* ... */];
+const expectedSet = new Set(expectedScreens);
+const orphans = page.children.filter(c => !expectedSet.has(c.name));
+for (const orphan of orphans) {
+  if (orphan.width <= 200 && orphan.height <= 200) {
+    orphan.remove(); // auto-delete small fragments
+  }
+}
+const remaining = page.children.filter(c => !expectedSet.has(c.name));
+if (remaining.length > 0) {
+  results.push({ warning: "Large orphans", nodes: remaining.map(n => `${n.name} (${n.id})`) });
+}
+```
+
+### K. Component Health Gate (safeInstance)
+
+Verify components are not empty shells before instancing:
+
+```javascript
+function safeInstance(componentId, fallbackName) {
+  const comp = figma.getNodeById(componentId);
+  if (!comp) throw new Error(`Component ${componentId} not found`);
+  if (comp.type === "COMPONENT" && comp.children.length === 0) {
+    throw new Error(`${fallbackName} (${componentId}) is empty — build inline or fix first.`);
+  }
+  if (comp.type === "COMPONENT_SET") {
+    const variant = comp.children[0];
+    if (!variant || variant.children.length === 0) {
+      throw new Error(`${fallbackName} set (${componentId}) has no usable variants.`);
+    }
+    const inst = variant.createInstance();
+    createdNodes.push(inst);
+    return inst;
+  }
+  const inst = comp.createInstance();
+  createdNodes.push(inst);
+  return inst;
+}
+```
+
+### L. Overlay Screen Pattern (Clone Background)
+
+Clone a source screen as the background layer for overlay screens:
+
+```javascript
+// Pattern A (dimmed): Background → Backdrop → Sheet
+// Pattern B (full): Background → Overlay element
+// Pattern C (modified): Background with changes → Toast/Overlay
+const source = figma.getNodeById("SOURCE_NODE_ID");
+const bg = source.clone();
+createdNodes.push(bg);
+bg.name = "BackgroundContext";
+bg.resize(DEVICE.width, DEVICE.height); // from .devices.md
+bg.clipsContent = true;
+bg.x = 0; bg.y = 0;
+targetScreen.insertChild(0, bg); // behind all overlay elements
+
+// For Pattern A, add a backdrop:
+const backdrop = createFrame("Backdrop");
+backdrop.resize(DEVICE.width, DEVICE.height);
+backdrop.fills = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 }, opacity: 0.5 }];
+targetScreen.insertChild(1, backdrop);
+```
 
 ---
 
